@@ -1,0 +1,124 @@
+%%
+%% template.tex
+%%
+%% Starting point for a new DUNE Interface Control Document.  Copy this
+%% file (and DUNEICD.cls, dune-icd-changes.sty, resolve_changes.py, Logos/,
+%% .gitignore from this _common/ directory) into a new project directory,
+%% rename it to dune_icd_daq_<interface>.tex, and fill in the placeholders
+%% below.
+%%
+%% Build with:  latexmk -pdf dune_icd_daq_<interface>.tex
+%%
+\documentclass[letterpaper]{DUNEICD}
+
+%--------------------------------------------------------------------------
+% Editorial markup (dune-icd-changes package)
+%--------------------------------------------------------------------------
+%
+%   \added[id=WK]{new text}
+%   \deleted[id=WK]{old text}
+%   \replaced[id=WK]{new text}{old text}
+%   \comment[id=WK]{question or note for reviewers}
+%   \begin{addedblock}[id=WK] ... \end{addedblock}
+%   \begin{deletedblock}[id=WK] ... \end{deletedblock}
+%
+% See dune-icd-changes.sty for the full command reference and the
+% rationale for addedblock/deletedblock (structural changes that \added/
+% \deleted cannot express, since they are LR-mode commands).
+%
+% >>> BEFORE SUBMITTING TO EDMS: swap the two \usepackage lines below and
+%     comment out \listofchanges at the end of this document. <<<
+%
+\usepackage{dune-icd-changes}          % --- DRAFT / REVIEW mode (markup visible) ---
+%\usepackage[final]{dune-icd-changes}  % --- SUBMISSION mode (markup silently resolved) ---
+
+% Reviewers / editors.  Colors come from xcolor's dvipsnames set, which the
+% DUNEICD class already loads.  One \definechangesauthor per person who
+% might leave markup; the [id] used in \added/\comment/etc must match.
+\definechangesauthor[name={Your Name},color=blue]{YN}
+
+%--------------------------------------------------------------------------
+% Document metadata
+%--------------------------------------------------------------------------
+\DocTitle{Full Document Title}
+\ShortDocTitle{DUNE ICD: Short Title}
+\DocDescription{One or two sentence description of what this document
+  covers, for the cover page.}
+\EDMSDocId{XXXXXXX}
+\EDMSDocUrl{https://edms.cern.ch/document/XXXXXXX}
+\DocVersion{0.1}
+\CreationDate{\today}
+\ModifiedDate{\today}
+\DocAuthors{Author One (Inst)\\ Author Two (Inst)}
+\DocCheckedBy{Reviewer One (Inst)\\ Reviewer Two (Inst)}
+\DocApprovedBy{Approver One (Inst)\\ Approver Two (Inst)}
+\DistributionList{\parbox[t]{0.7\textwidth}{\raggedright
+  \href{mailto:list@example.org}{list@example.org}}}
+
+\begin{document}
+
+\makeICDcover
+
+\begin{revisionhistory}
+  \revEntry{0.1}{\today}{Author}{Initial draft}
+\end{revisionhistory}
+
+\tableofcontents
+\clearpage
+
+%--------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:introduction}
+%--------------------------------------------------------------------------
+
+Describe the purpose and scope of this interface document: which two
+consortia/groups it connects, and what it is meant to formalize.
+
+%--------------------------------------------------------------------------
+\section{Section Title}
+\label{sec:section-one}
+%--------------------------------------------------------------------------
+
+Body text.  Use \texttt{item\_dense}/\texttt{enum\_dense} for compact lists:
+
+\begin{item_dense}
+  \item First point.
+  \item Second point.
+\end{item_dense}
+
+An item/responsibility/status table, e.g. for open action items or
+deliverables (see DUNEICD.cls for the \texttt{icdtable}/\texttt{icdrow}
+definitions):
+
+\begin{icdtable}{Activity}
+  \icdrow{1}{Description of the first item.}{Responsible party}{\textbf{OPEN}}
+  \icdrow{2}{Description of the second item.}{Responsible party}{Planned}
+\end{icdtable}
+
+%--------------------------------------------------------------------------
+\section{References}
+\label{sec:references}
+%--------------------------------------------------------------------------
+
+List related EDMS documents and other references here.
+
+%--------------------------------------------------------------------------
+% Only include \appendix and the sections below if this document needs
+% appendices.  Use plain \appendix + \section{...} -- NOT a hand-rolled
+% "APPENDIX A" section -- so lettering, ToC entries, and \ref/\label all
+% work correctly. Referenced elsewhere as e.g. Appendix~\ref{app:example}.
+%--------------------------------------------------------------------------
+% \clearpage
+% \appendix
+% \section{Appendix Title}
+% \label{app:example}
+%
+% Appendix body.
+
+%--------------------------------------------------------------------------
+% Summary of editorial markup -- comment out for the EDMS submission build.
+%--------------------------------------------------------------------------
+\clearpage
+\listofchanges
+
+\end{document}

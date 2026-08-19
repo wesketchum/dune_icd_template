@@ -1,0 +1,82 @@
+# LaTeX build artifacts
+
+#Final built PDF (matches this project's dune_icd_daq_<name>.tex convention;
+#Logos/*.pdf are tracked source assets, not build output, so are unaffected)
+dune_icd_daq_*.pdf
+
+## Core latex/pdflatex auxiliary files
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+## Intermediate documents
+*.dvi
+*.xdv
+*-converted-to.*
+
+## Bibliography auxiliary files (biblatex/bibtex)
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+## Build tool artifacts
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+
+## Index / glossary / nomenclature
+*.idx
+*.ilg
+*.ind
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.acn
+*.acr
+*.alg
+*.nlo
+*.nls
+
+## changes package (editorial markup)
+# List of changes / summary of changes index files, written by \listofchanges.
+*.loc
+*.soc
+
+## latexdiff output
+# Generated markup files -- regenerate with latexdiff-vc rather than commit.
+diff.tex
+diff.pdf
+*-diff.tex
+*-diff.pdf
+diff*.aux
+diff*.log
+
+## Editor / OS cruft
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+*~
+*.swp
+*.bak
+.vscode/
+.texpadtmp/
+

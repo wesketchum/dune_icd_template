@@ -1,0 +1,162 @@
+%%
+%% dune-icd-changes.sty
+%%
+%% Editorial markup for DUNE ICD documents: a thin wrapper around the
+%% `changes` package plus `addedblock`/`deletedblock` environments for
+%% marking whole structural blocks (headings + body) as proposed
+%% additions/deletions -- something `\added`/`\deleted` cannot do, since
+%% they are LR-mode commands and cannot contain \subsection, \label, or
+%% blank lines.
+%%
+%% Usage in a document preamble:
+%%
+%%   \usepackage{dune-icd-changes}          % DRAFT/REVIEW: markup visible
+%%   %\usepackage[final]{dune-icd-changes}  % SUBMISSION: markup resolved
+%%
+%%   \definechangesauthor[name={Wes Ketchum},color=blue]{WK}
+%%
+%% This replaces swapping two separate \usepackage{changes} lines with a
+%% single option -- the [final] switch is passed through to `changes`
+%% itself, so \added/\deleted/\replaced/\comment and addedblock/deletedblock
+%% all follow the same draft/submission state automatically.
+%%
+%%   \added[id=WK]{new text}
+%%   \deleted[id=WK]{old text}
+%%   \replaced[id=WK]{new text}{old text}
+%%   \comment[id=WK]{question or note for reviewers}
+%%
+%%   \begin{deletedblock}[id=WK]        \begin{addedblock}[id=WK]
+%%   \subsection{Some Subsection}       \subsection{Some Subsection}
+%%   ...body: headings, lists, ...      ...body: headings, lists, ...
+%%   \end{deletedblock}                 \end{addedblock}
+%%
+%% An optional reason may be given, and is printed after the [id] header:
+%%
+%%   \begin{deletedblock}[id=WK,reason={superseded by the I&I ICD}]
+%%
+%% Both are drawn in the author's own color, taken from the same
+%% \definechangesauthor declaration used by \added / \deleted / \comment, so
+%% a block and a comment by the same person always match. An undefined id
+%% raises the usual "Undefined changes author" error rather than silently
+%% falling back to a default color. They differ only in that:
+%%
+%%   deletedblock -- DASHED side bar; "PROPOSED DELETION" header;
+%%                   sectioning titles struck through
+%%   addedblock   -- SOLID  side bar; "PROPOSED ADDITION" header;
+%%                   titles left alone
+%%
+%% Both register an entry in \listofchanges (typed "deleted" / "added",
+%% described by the reason text) and increment that author's counters, so
+%% they also show up in \listofchanges[style=summary].
+%%
+%% In [final] mode a deletedblock discards its whole body (heading, label,
+%% ToC entry and all) while an addedblock keeps its body but drops the frame
+%% and color -- mirroring how \deleted and \added resolve.
+%%
+%% CAVEATS:
+%%   - Only sectioning TITLES are struck through in a deletedblock, not the
+%%     body text. \sout and soul's \st are both LR-mode, so they cannot span
+%%     headings, blank lines or lists; the per-paragraph \everypar trick
+%%     breaks inside itemize, and soul's \st breaks on \href. The dashed
+%%     bar, [id] header and color carry the "deleted" meaning for the body.
+%%   - \label{}s inside a deletedblock vanish in [final] mode, so any \ref to
+%%     them elsewhere will break. Check for references before submitting.
+%%   - The \addcontentsline{loc} call depends on the changes package's
+%%     internal .loc format, which is not a documented API. It works on
+%%     TeX Live 2026; a future rewrite could change it. Failure would be a
+%%     visibly malformed list entry, not silent corruption.
+%%   - This package requires margins of at least ~2.5cm if using the default
+%%     commentmarkup=todo (boxed margin note); DUNEICD's margins are exactly
+%%     2.5cm, so commentmarkup=uwave (inline) is used instead to avoid
+%%     clipping at the page edge, and to keep pagination stable between
+%%     draft and [final] builds.
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{dune-icd-changes}[2026/07/29 v1.0 DUNE ICD editorial markup]
+
+\newif\if@diceditfinal\@diceditfinalfalse
+\DeclareOption{final}{\@diceditfinaltrue}
+\DeclareOption*{\PassOptionsToPackage{\CurrentOption}{changes}}
+\ProcessOptions\relax
+
+% NOTE: the changes package loads todonotes internally, so todonotes options
+% must be set with \PassOptionsToPackage BEFORE changes is loaded -- loading
+% todonotes directly causes an option clash with this class.
+\PassOptionsToPackage{textsize=footnotesize,textwidth=2.2cm}{todonotes}
+
+\if@diceditfinal
+  \PassOptionsToPackage{final}{changes}
+\else
+  \PassOptionsToPackage{markup=underlined,addedmarkup=bf,commentmarkup=uwave}{changes}
+\fi
+\RequirePackage{changes}
+
+\RequirePackage{environ}
+\RequirePackage[framemethod=tikz]{mdframed}
+\makeatletter
+\define@key{cblock}{id}{\def\cb@id{#1}}
+\define@key{cblock}{reason}{\def\cb@reason{#1}}
+%
+% The side bar is drawn by hand as a TikZ line rather than with mdframed's
+% own leftline=true. mdframed's frame rules cannot be dashed: the default
+% backend draws solid rules only, and the TikZ backend paints a solid
+% "preaction" underneath the styled line, which fills the gaps back in.
+% (Verified by inspecting the PDF content stream -- no dash operator is
+% emitted either way.) Drawing into the *extra hooks instead gives a real
+% dash pattern. (O) is the bottom-left of the frame box and (O|-P) is the
+% top-left, so this is the left edge; the four hooks cover un-split frames
+% and the first/middle/last piece of one broken across pages.
+%
+\newcommand{\cb@bar}[1]{%
+  \draw[cb@color,#1,line width=2pt] (O) -- (O|-P);}
+%
+% One shared implementation, instantiated twice below.
+%   #1 = kind: added|deleted  (names the environment, the .loc entry type,
+%              and the changes counter -- so it must match those spellings)
+%   #2 = label word for the list of changes ("Added" / "Deleted")
+%   #3 = 1 to strike sectioning titles, 0 to leave them alone
+%   #4 = TikZ line style for the side bar (dashed vs solid)
+%   #5 = header word shown in the block itself ("ADDITION" / "DELETION")
+%
+\newcommand{\cb@make}[5]{%
+  \NewEnviron{#1block}[1][]{%
+    \def\cb@id{}\def\cb@reason{}%
+    \setkeys{cblock}{##1}%
+    % Validate the id and pull this author's color out of the changes
+    % package, so a block matches that author's inline markup.
+    \Changes@check@author{\cb@id}%
+    \colorlet{cb@color}{black}%
+    \Changes@set@color{\cb@id}%
+    \colorlet{cb@color}{authorcolor}%
+    \stepcounter{Changes@#1Count\cb@id}%
+    \phantomsection
+    \addcontentsline{loc}{#1}{%
+      #2~(\cb@id): \truncate{\Changestruncatewidth}{%
+        \ifx\cb@reason\@empty block\else\cb@reason\fi}}%
+    \begin{mdframed}[hidealllines=true,
+       innerleftmargin=8pt,innerrightmargin=0pt,skipabove=6pt,skipbelow=6pt,
+       singleextra={\cb@bar{#4}},firstextra={\cb@bar{#4}},
+       middleextra={\cb@bar{#4}},secondextra={\cb@bar{#4}}]
+    {\color{cb@color}\footnotesize
+       \textbf{[\cb@id] PROPOSED #5}%
+       \ifx\cb@reason\@empty\else: \textit{\cb@reason}\fi}%
+    \par\vspace{2pt}
+    {\color{cb@color}%
+     \ifnum#3=1
+       \let\cb@oldsubsection\subsection
+       \def\subsection####1{\cb@oldsubsection{\texorpdfstring{\sout{####1}}{####1}}}%
+       \let\cb@oldsubsubsection\subsubsection
+       \def\subsubsection####1{\cb@oldsubsubsection{\texorpdfstring{\sout{####1}}{####1}}}%
+     \fi
+     \BODY}
+    \end{mdframed}}}
+\@ifpackagewith{changes}{final}
+  {% submission: deletions vanish, additions stay as ordinary text
+   \NewEnviron{deletedblock}[1][]{}%
+   \NewEnviron{addedblock}[1][]{\BODY}}
+  {% draft: dashed bar + struck titles for deletions, solid bar for additions
+   \cb@make{deleted}{\changesdeletedname}{1}{dash pattern=on 4pt off 3pt}{DELETION}%
+   \cb@make{added}{\changesaddedname}{0}{solid}{ADDITION}}
+\makeatother
+
+\endinput
