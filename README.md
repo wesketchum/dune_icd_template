@@ -21,6 +21,7 @@ DUNE Interface Control Documents (ICDs).
   with `[final]`. Useful for producing a clean submission copy with no
   remaining markup or package dependency. Run `python3 resolve_changes.py
   --help` for usage (or see the module docstring).
+- **`icd_to_docx.py`** and **`icd_changes_to_docx.lua`** -- Export a document to Word with pandoc, as a clean copy by default or with the markup as Word tracked changes. See "Word export" below.
 - **`Logos/`** -- DUNE logo assets used on the cover page.
 - **`template.tex`** -- Starting point for a new ICD document.
 - **`.gitignore`** -- LaTeX build-artifact patterns.
@@ -32,7 +33,7 @@ project directory:
 
 ```sh
 mkdir dune_icd_daq_<interface>
-cp DUNEICD.cls dune-icd-changes.sty resolve_changes.py .gitignore dune_icd_daq_<interface>/
+cp DUNEICD.cls dune-icd-changes.sty resolve_changes.py icd_to_docx.py icd_changes_to_docx.lua .gitignore dune_icd_daq_<interface>/
 cp -r Logos dune_icd_daq_<interface>/
 cp template.tex dune_icd_daq_<interface>/dune_icd_daq_<interface>.tex
 ```
@@ -93,6 +94,18 @@ python3 resolve_changes.py --drop-package-usage dune_icd_daq_<interface>.tex
 This overwrites the file in place (pass a second path argument to write
 to a different file instead). Diff or compile the result to confirm it
 matches expectations before submitting.
+
+### Word export
+
+To produce a Word version, for example for reviewers who work in Word or for an EDMS upload:
+
+```sh
+python3 icd_to_docx.py dune_icd_daq_<interface>.tex --reference-doc <original>.docx
+```
+
+This writes `dune_icd_daq_<interface>_clean.docx`, with the markup resolved as `resolve_changes.py` does, and fonts, headings and margins taken from the reference document (for example the EDMS Word original). `--tracked` instead keeps the markup as Word tracked changes and comments, attributed to the names in `\definechangesauthor`, and writes `dune_icd_daq_<interface>_tracked.docx`; add `--no-comments` to leave out `\comment` and `\ToDo`. Needs pandoc 3.x, with `icd_changes_to_docx.lua` next to the script.
+
+The cover page is rebuilt as a plain title block and metadata table rather than the LaTeX cover layout, so check it against the EDMS cover. The table of contents fills in when fields are updated in Word (F9), and Word numbers the headings in sequence, so a section number skipped in the LaTeX is not skipped in Word.
 
 ## Copy-paste vendoring
 
