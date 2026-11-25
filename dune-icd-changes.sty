@@ -24,6 +24,7 @@
 %%   \deleted[id=WK]{old text}
 %%   \replaced[id=WK]{new text}{old text}
 %%   \comment[id=WK]{question or note for reviewers}
+%%   \ToDo[id=WK]{work still to be done on the document}
 %%
 %%   \begin{deletedblock}[id=WK]        \begin{addedblock}[id=WK]
 %%   \subsection{Some Subsection}       \subsection{Some Subsection}
@@ -53,7 +54,32 @@
 %% ToC entry and all) while an addedblock keeps its body but drops the frame
 %% and color -- mirroring how \deleted and \added resolve.
 %%
+%% TODO ITEMS:
+%%
+%%   \ToDo[id=WK]{Confirm rack elevations with Facility.}
+%%   ...
+%%   \listofToDos         % e.g. just after \listofchanges
+%%
+%% \ToDo marks work the author still has to do (as opposed to \comment,
+%% which is a note to reviewers). It is set inline as "ToDo WK: text" on a
+%% yellow background, in the author's own color (the same color as that
+%% author's \comment text) with a bold "ToDo WK:" prefix. \listofToDos
+%% prints every ToDo with its page number and a hyperlink back to it, in
+%% the same author colors. The id is optional; without one the prefix is
+%% just "ToDo:" in black. An undefined id raises the usual "Undefined
+%% changes author" error.
+%%
+%% The names \ToDo / \listofToDos are deliberate: the todonotes package,
+%% which `changes` loads, already owns \todo and \listoftodos.
+%%
+%% In [final] mode \ToDo discards its text and \listofToDos prints nothing,
+%% silently, just as \comment does.
+%%
 %% CAVEATS:
+%%   - A \ToDo is a ulem-based highlight, so, like \comment's \uwave text,
+%%     it breaks across lines but must not contain \par or display
+%%     material. The list entry repeats the full text, so avoid \label and
+%%     \footnote inside a \ToDo.
 %%   - Only sectioning TITLES are struck through in a deletedblock, not the
 %%     body text. \sout and soul's \st are both LR-mode, so they cannot span
 %%     headings, blank lines or lists; the per-paragraph \everypar trick
@@ -157,6 +183,48 @@
   {% draft: dashed bar + struck titles for deletions, solid bar for additions
    \cb@make{deleted}{\changesdeletedname}{1}{dash pattern=on 4pt off 3pt}{DELETION}%
    \cb@make{added}{\changesaddedname}{0}{solid}{ADDITION}}
+%
+% ---- ToDo items ---------------------------------------------------------
+%
+% Entries are written to \jobname.tdo (a "todo"-typed table of contents, in
+% the style of \listoffigures) and read back by \listofToDos on the next
+% run. \dt@any is set through the .aux file if at least one \ToDo exists,
+% so the list can say so instead of printing an empty heading.
+%
+\newcommand{\listofToDosname}{List of ToDos}
+\@ifpackagewith{changes}{final}
+  {% submission: ToDos and their list vanish
+   \newcommand{\ToDo}[2][]{}%
+   \newcommand{\listofToDos}{}}
+  {% draft: yellow highlight, author-colored, plus the list
+   \define@key{dtodo}{id}{\def\dt@id{#1}}
+   \newcommand{\dt@yellow}{%
+     \bgroup\markoverwith{\textcolor{yellow}{\rule[-0.55ex]{2pt}{2.3ex}}}\ULon}
+   \newcommand{\dt@prefix}{%
+     ToDo\ifx\dt@id\@empty\else~\dt@id\fi:}
+   \newcommand{\ToDo}[2][]{%
+     \begingroup
+     \def\dt@id{}\setkeys{dtodo}{#1}%
+     \Changes@check@author{\dt@id}%
+     \colorlet{authorcolor}{black}%
+     \ifx\dt@id\@empty\else\Changes@set@color{\dt@id}\fi
+     \phantomsection
+     \protected@write\@auxout{}{\string\gdef\string\dt@any{}}%
+     \addcontentsline{tdo}{todo}{%
+       \ifx\dt@id\@empty\else
+         \protect\color{\csname Changes@AuthorColor\dt@id\endcsname}\fi
+       \textbf{\dt@prefix}~#2}%
+     \allowbreak
+     {\color{authorcolor}\dt@yellow{\textbf{\dt@prefix}~#2}}%
+     \endgroup}
+   \newcommand{\l@todo}[2]{\@dottedtocline{1}{0em}{0em}{#1}{#2}}
+   \newcommand{\listofToDos}{%
+     \section*{\listofToDosname}%
+     \ifdefined\dt@any
+       \@starttoc{tdo}%
+     \else
+       \emph{No ToDos.}%
+     \fi}}
 \makeatother
 
 \endinput

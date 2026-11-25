@@ -11,10 +11,11 @@ DUNE Interface Control Documents (ICDs).
 - **`dune-icd-changes.sty`** -- Thin wrapper around the `changes` package
   for tracking editorial markup (`\added`, `\deleted`, `\replaced`,
   `\comment`), plus `addedblock`/`deletedblock` environments for marking
-  whole structural blocks (headings + body) as proposed additions/deletions.
+  whole structural blocks (headings + body) as proposed additions/deletions,
+  and `\ToDo` / `\listofToDos` for tracking the author's own outstanding work.
   See the comments at the top of the file for the full command reference.
 - **`resolve_changes.py`** -- Standalone script that bakes editorial markup
-  into plain LaTeX text: `\added`/`\deleted`/`\replaced`/`\comment` calls
+  into plain LaTeX text: `\added`/`\deleted`/`\replaced`/`\comment`/`\ToDo` calls
   and `addedblock`/`deletedblock` environments are replaced by the text
   they resolve to, rather than just being visually hidden by compiling
   with `[final]`. Useful for producing a clean submission copy with no
@@ -58,6 +59,28 @@ Reviewers mark up proposed changes with `\added`, `\deleted`, `\replaced`,
 `\comment`, and the `addedblock`/`deletedblock` environments (see
 `dune-icd-changes.sty` for the full reference). `\listofchanges` at the
 end of the document prints a summary of all markup.
+
+### ToDo items
+
+Authors track their own outstanding work with `\ToDo`:
+
+```latex
+\ToDo[id=WK]{Confirm rack elevations with Facility.}
+...
+\listofchanges
+\listofToDos
+```
+
+Each ToDo appears inline as **ToDo WK:** followed by the text, on a yellow
+highlight, in the author's color (the same color as that author's
+`\comment`s). `\listofToDos` prints a list of all ToDos with hyperlinked page
+numbers. The `id` is optional (without it the prefix is just "ToDo:" in
+black). The names are capitalized because `todonotes`, loaded by `changes`,
+already defines `\todo` and `\listoftodos`.
+
+In `[final]` mode ToDos and the list are silently dropped, with no warning,
+so check `\listofToDos` before switching. `resolve_changes.py` also removes
+`\ToDo` calls (and, with `--drop-package-usage`, `\listofToDos` lines).
 
 Before an EDMS submission, resolve the markup into plain text so the
 submitted document is clean and has no residual dependency on the

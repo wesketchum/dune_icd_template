@@ -11,6 +11,7 @@ Resolution rules (matching changes.sty's own [final] behavior):
     \\deleted[id]{text}        -> (removed)
     \\replaced[id]{new}{old}   -> new
     \\comment[id]{text}        -> (removed)
+    \\ToDo[id]{text}           -> (removed)
     \\begin{addedblock}[...] BODY \\end{addedblock}   -> BODY
     \\begin{deletedblock}[...] BODY \\end{deletedblock} -> (removed)
 
@@ -22,7 +23,7 @@ If output.tex is omitted, input.tex is overwritten in place.
 import re
 import sys
 
-INLINE_COMMANDS = {"added": 1, "deleted": 1, "replaced": 2, "comment": 1}
+INLINE_COMMANDS = {"added": 1, "deleted": 1, "replaced": 2, "comment": 1, "ToDo": 1}
 BLOCK_ENVIRONMENTS = {"addedblock", "deletedblock"}
 
 
@@ -143,7 +144,7 @@ def resolve_inline_commands(text):
                     pass
                 elif name == "replaced":
                     out.append(args[0])
-                elif name == "comment":
+                elif name in ("comment", "ToDo"):
                     pass
                 i = pos
                 continue
@@ -208,13 +209,14 @@ PREAMBLE_LINE_PATTERNS = [
     re.compile(r"^\s*%?\s*\\usepackage(\[[^\]]*\])?\{dune-icd-changes\}.*$"),
     re.compile(r"^\s*%?\s*\\definechangesauthor.*$"),
     re.compile(r"^\s*%?\s*\\listofchanges.*$"),
+    re.compile(r"^\s*%?\s*\\listofToDos.*$"),
 ]
 
 
 def strip_changes_package_usage(text):
     """Optional cleanup pass (not run by default -- see --drop-package-usage):
-    drop \\usepackage{dune-icd-changes}, \\definechangesauthor, and
-    \\listofchanges lines (commented or not) so the resolved document has no
+    drop \\usepackage{dune-icd-changes}, \\definechangesauthor,
+    \\listofchanges, and \\listofToDos lines (commented or not) so the resolved document has no
     remaining dependency on the changes/dune-icd-changes packages.
     """
     lines = text.split("\n")
@@ -237,7 +239,7 @@ def main():
     if len(args) not in (1, 2):
         print(__doc__)
         print("\nOptions:\n  --drop-package-usage  Also remove \\usepackage{dune-icd-changes},"
-              "\n                        \\definechangesauthor, and \\listofchanges lines."
+              "\n                        \\definechangesauthor, \\listofchanges, and \\listofToDos lines."
               "\n\nIf output.tex is omitted, input.tex is overwritten in place.")
         sys.exit(1)
     src_path = args[0]
